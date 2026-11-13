@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Clipson</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">&#9986;</span>
+      <span class="brand-name">Clipson</span>
+    </div>
+
+    <div class="url-box" id="urlBox">
+      <svg class="url-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>
+      <input id="url" type="text" spellcheck="false" autocomplete="off"
+             placeholder="Wklej link do YouTube (Ctrl+V) – załaduje się automatycznie">
+      <button id="clearUrl" class="icon-btn" title="Wyczyść">&times;</button>
+    </div>
+
+    <div class="folder">
+      <button id="folderBtn" class="folder-btn" title="Zmień folder docelowy">
+        <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span id="folderPath">...</span>
+      </button>
+      <button id="openFolderBtn" class="ghost-btn" title="Otwórz folder w Eksploratorze">Otwórz</button>
+    </div>
+  </header>
+
+  <div id="toolWarning" class="banner hidden"></div>
+
+  <main class="layout">
+    <section class="stage">
+      <div id="empty" class="empty">
+        <div class="empty-icon">&#9654;</div>
+        <h2>Wklej link do filmu z YouTube</h2>
+        <p>Obsługiwane: <code>youtube.com/watch</code>, <code>youtu.be</code>, <code>shorts</code>, <code>live</code></p>
+        <div class="shortcuts">
+          <span><kbd>I</kbd> ustaw IN</span>
+          <span><kbd>O</kbd> ustaw OUT</span>
+          <span><kbd>Spacja</kbd> play/pauza</span>
+          <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> &plusmn;0,1 s (<kbd>Shift</kbd> &plusmn;1 s)</span>
+          <span><kbd>P</kbd> podgląd</span>
+          <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> pobierz</span>
+        </div>
+      </div>
+
+      <div id="editor" class="editor hidden">
+        <div class="video-title" id="videoTitle"></div>
+        <div class="player-wrap"><div id="player"></div></div>
+
+        <div class="timeline" id="timeline">
+          <div class="ruler" id="ruler"></div>
+          <div class="track" id="track">
+            <div class="range" id="range"></div>
+            <div class="playhead" id="playhead"></div>
+            <div class="handle in" id="handleIn" title="IN"></div>
+            <div class="handle out" id="handleOut" title="OUT"></div>
+            <div class="hover-time" id="hoverTime"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="ctrl-group">
+            <button class="step-btn" data-step="-1" title="-1 s (Shift+&larr;)">&laquo;</button>
+            <button class="step-btn" data-step="-0.1" title="-0,1 s (&larr;)">&lsaquo;</button>
+            <button id="playBtn" class="play-btn" title="Play/pauza (Spacja)">&#9654;</button>
+            <button class="step-btn" data-step="0.1" title="+0,1 s (&rarr;)">&rsaquo;</button>
+            <button class="step-btn" data-step="1" title="+1 s (Shift+&rarr;)">&raquo;</button>
+            <input id="currentTime" class="time-input current" type="text" spellcheck="false" title="Aktualny czas – wpisz i Enter, aby przejść">
+            <span class="total" id="totalTime">/ 00:00.0</span>
+          </div>
+
+          <div class="inout">
+            <div class="mark in">
+              <button id="setIn" class="mark-btn in">Ustaw IN <kbd>I</kbd></button>
+              <div class="time-field">
+                <button class="nudge" data-target="in" data-step="-0.1">&minus;</button>
+                <input id="inTime" class="time-input" type="text" placeholder="--:--.-" spellcheck="false">
+                <button class="nudge" data-target="in" data-step="0.1">+</button>
+              </div>
+              <button class="goto" data-target="in" title="Przejdź do IN">&#8618;</button>
+            </div>
+            <div class="mark out">
+              <button id="setOut" class="mark-btn out">Ustaw OUT <kbd>O</kbd></button>
+              <div class="time-field">
+                <button class="nudge" data-target="out" data-step="-0.1">&minus;</button>
+                <input id="outTime" class="time-input" type="text" placeholder="--:--.-" spellcheck="false">
+                <button class="nudge" data-target="out" data-step="0.1">+</button>
+              </div>
+              <button class="goto" data-target="out" title="Przejdź do OUT">&#8618;</button>
+            </div>
+            <div class="clip-info">
+              <span class="label">Długość</span>
+              <span id="clipLength" class="value">&ndash;</span>
+              <button id="previewBtn" class="ghost-btn" title="Odtwórz od IN do OUT (P)">&#9654; Podgląd</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <h3>Format</h3>
+        <div class="formats" id="formats">
+          <label class="fmt"><input type="radio" name="mode" value="av">
+            <span class="fmt-body"><b>Wideo + Dźwięk</b><small>MP4 · H.264 + AAC</small></span></label>
+          <label class="fmt"><input type="radio" name="mode" value="v">
+            <span class="fmt-body"><b>Samo wideo</b><small>MP4 · bez dźwięku</small></span></label>
+          <label class="fmt"><input type="radio" name="mode" value="a">
+            <span class="fmt-body"><b>Sam dźwięk</b><small>WAV · bezstratny</small></span></label>
+          <label class="fmt"><input type="radio" name="mode" value="gif">
+            <span class="fmt-body"><b>GIF</b><small>480p · 15 fps</small></span></label>
+          <label class="fmt"><input type="radio" name="mode" value="png">
+            <span class="fmt-body"><b>Klatka</b><small>PNG · w punkcie IN</small></span></label>
+        </div>
+
+        <div class="option" id="qualityRow">
+          <span>Jakość</span>
+          <select id="quality">
+            <option value="best">Najlepsza</option>
+            <option value="2160">2160p (4K)</option>
+            <option value="1440">1440p</option>
+            <option value="1080">1080p</option>
+            <option value="720">720p</option>
+            <option value="480">480p</option>
+          </select>
+        </div>
+
+        <label class="option toggle" id="accurateRow"
+               title="Włączone: cięcie co do 0,1 s (przekodowanie do H.264). Wyłączone: szybko, bez przekodowania, ale cięcie na najbliższych klatkach kluczowych.">
+          <span>Dokładne cięcie <small>(przekodowanie)</small></span>
+          <input type="checkbox" id="accurate">
+          <span class="switch"></span>
+        </label>
+
+        <button id="downloadBtn" class="download-btn" disabled>
+          Pobierz wycinek <kbd>Ctrl</kbd>+<kbd>Enter</kbd>
+        </button>
+        <div class="hint" id="downloadHint">Załaduj film i ustaw IN oraz OUT.</div>
+      </div>
+
+      <div class="panel jobs-panel">
+        <h3>Pobrane <span class="count" id="jobCount"></span></h3>
+        <div id="jobs" class="jobs">
+          <div class="jobs-empty">Tu pojawią się Twoje wycinki.</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toasts" class="toasts"></div>
+
+  <script src="app.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# Ustawienia i dane lokalne
+config.json
+clips/
+.webview/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
